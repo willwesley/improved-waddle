@@ -30,15 +30,15 @@ You must cite at least the 3 papers you critiqued, and any additional supporting
 
 To find related work you should look at the references (bibliography) in the papers themselves, use the "Cited By" link in Google Scholar from a given paper and filter on publication year, or look in the conference proceedings from the last few years of ISCA, MICRO, ASPLOS, and HPCA.
 
-[1] https://dl.acm.org/conference/isca/proceedings
-[2] https://www.ieee.org/conferences/publishing/templates.html
+- [1] https://dl.acm.org/conference/isca/proceedings
+- [2] https://www.ieee.org/conferences/publishing/templates.html
 
 Submit your research paper in PDF format. The paper will be run through a plagiarism detection software. Do not copy and paste from other work!
 
 # TL;DR
 
-So, find a paper that doesn't suck.
-Then find two related papers.
-Critique them.
-Write paper.
+- [ ] Find a paper that doesn't suck.
+- [ ] Then find two related papers.
+- [ ] Critique all three.
+- [ ] Write paper.
 
