@@ -1,0 +1,51 @@
+Critique of "Axiomatic Hardware-Software Contracts for Security" Mosier, et al (2022) [1] by Will Wesley
+
+In the face of hardware vulnerabilities such as Spectre and Meltdown, research is being done to mitigate exploitation while maintaining the performance gains of speculative execution combined with various caches that lead to the presence of a side channel for data exfiltration.
+With either attack, data is exfiltrated by calling into another context that has access to the desired resource and can be induced to speculatively access the resource and transmit values to a covert channel.
+A mitigation to this problem is to insert "fences" in the code that effectively disables speculation in areas where such speculation might lead to transmitting on a covert channel, but requires judicious use by the programmer to be effective.
+Too many fences will lead to poor performance and leaving out just one fence will leave the application vulnerable.
+This paper attempts to systematize and automate analysis of software for "microarchitectural leakage" in order to reason about expected program execution versus actual execution in a meaningful way to identify and correct program structures that are liable to such attacks.
+The paper builds on Memory Consistency Models (MCMs) to create Leakage Containment Models (LCMs) which are used to detect leakage in examples from other papers.
+The paper concludes with a discussion of CLOU, a static analysis tool that uses LCMs to detect leakage automatically and can automatically insert fences for problem areas, and results of applying the tool to libsodium and OpenSSL.
+
+The paper gives a treatment of MCMs upon which LCMs are explained, which helps the reader understand the novelty of LCMs.
+The authors explain this extension reasonably well, but the figures provided were not particularly enlightening.
+While they followed from the text, they didn't help prepare the reader to easily digest the text explanations.
+
+A powerful support for both the model and the static analysis tool was the concrete example of a new bug identified in OpenSSL by CLOU.
+The authors state that many Spectre gadgets were uncovered in libsodium and OpenSSL and give source code snippet and explanation of one instance.
+This provides convincing evidence that the approach and tool are promising avenues to explore.
+The tool yielded several false positives that the authors manually culled, but believe could be automated.
+
+Future work should investigate further extensions to LCMs and to understand how to model differences between hardware execution and programmer expectations can lead to vulnerabilities.
+The crux of Spectre and Meltdown style vulnerabilities, as we understand it, is that the abstraction between software and hardware has holes poked in it by the long pursuit of performance.
+Certain optimizations have improved the average performance of software while allowing the variation to grow.
+If the variation correlates with the contents of sensitive data, then that data can be inferred and security compromised.
+
+[1] Nicholas Mosier, Hanna Lachnitt, Hamed Nemati, and Caroline Trippel. 2022. Axiomatic Hardware-Software Contracts for Security. In The 49th Annual International Symposium on Computer Architecture (ISCA ’22), June 18–22, 2022, New York, NY, USA. ACM, New York, NY, USA
+
+-------------
+Introduction
+The name of the author and title of the article.
+The core idea of the author.
+A clear thesis that reflects the direction of your critique.
+Summary
+The main idea of the article.
+The main arguments presented in the article.
+The conclusion of the article.
+Critique
+Highlight the strong and weak sides of the article.
+Express an educated opinion regarding the relevancy, clarity, and accuracy of the article. Backup your claims with direct examples from the piece.
+Conclusion
+Summary of the key points of the article.
+Finalization of your conclusion with your comments on the relevancy of the research.
+If you claim the research is relevant, make a statement of why further study in this field can be useful.
+
+Dr. Bloom wants:
+My Name
+Name of Paper (author)
+Summary
+Merits:
+- strengths
+- weaknesses
+Future Work
