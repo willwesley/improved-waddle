@@ -1,8 +1,52 @@
+@inproceedings {canella2019,
+  author = {Claudio Canella and Jo Van Bulck and Michael Schwarz and Moritz Lipp and Benjamin von Berg and Philipp Ortner and Frank Piessens and Dmitry Evtyushkin and Daniel Gruss},
+  title = {A Systematic Evaluation of Transient Execution Attacks and Defenses},
+  booktitle = {28th USENIX Security Symposium (USENIX Security 19)},
+  year = {2019},
+  isbn = {978-1-939133-06-9},
+  address = {Santa Clara, CA},
+  pages = {249--266},
+  url = {https://www.usenix.org/conference/usenixsecurity19/presentation/canella},
+  publisher = {USENIX Association},
+  month = aug,
+}
 
-@inproceedings{Kocher2018spectre,
- author = {Paul Kocher and Jann Horn and Anders Fogh and and Daniel Genkin and Daniel Gruss and Werner Haas and Mike Hamburg and Moritz Lipp and Stefan Mangard and Thomas Prescher and Michael Schwarz and Yuval Yarom},
- title = {Spectre Attacks: Exploiting Speculative Execution},
- booktitle = {40th IEEE Symposium on Security and Privacy (S\&P'19)},
- year = {2019},
+@inproceedings{mosier2022,
+  author = {Mosier, Nicholas and Lachnitt, Hanna and Nemati, Hamed and Trippel, Caroline},
+  title = {Axiomatic Hardware-Software Contracts for Security},
+  year = {2022},
+  isbn = {9781450386104},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3470496.3527412},
+  doi = {10.1145/3470496.3527412},
+  abstract = {We propose leakage containment models (LCMs)---novel axiomatic security contracts which support formally reasoning about the security guarantees of programs when they run on particular microarchitectures. Our core contribution is an axiomatic vocabulary for formalizing LCMs, derived from the established axiomatic vocabulary for formalizing processor memory consistency models. Using this vocabulary, we formalize microarchitectural leakage---focusing on leakage through hardware memory systems---so that it can be automatically detected in programs and provide a taxonomy for classifying said leakage by severity. To illustrate the efficacy of LCMs, we first demonstrate that our leakage definition faithfully captures a sampling of (transient and non-transient) microarchitectural attacks from the literature. Second, we develop a static analysis tool based on LCMs which automatically identifies Spectre vulnerabilities in programs and scales to analyze real-world crypto-libraries.},
+  booktitle = {Proceedings of the 49th Annual International Symposium on Computer Architecture},
+  pages = {72–86},
+  numpages = {15},
+  keywords = {hardware security, hardware-software contracts, memory consistency models, side-channel attacks, spectre},
+  location = {New York, New York},
+  series = {ISCA '22}
+}
+
+@INPROCEEDINGS{cats2022,
+  author={Ponce-de-Leon, Hernán and Kinder, Johannes},
+  booktitle={2022 IEEE Symposium on Security and Privacy (SP)},
+  title={Cats vs. Spectre: An Axiomatic Approach to Modeling Speculative Execution Attacks},
+  year={2022},
+  volume={},
+  number={},
+  pages={235-248},
+  doi={10.1109/SP46214.2022.9833774}
+}
+
+@inproceedings{shepherd2022transient,
+  title={Transient Execution and Side Channel Analysis: a Vulnerability or a Science Experiment?},
+  author={Shepherd, Michael and Brookes, Scott and Denz, Robert},
+  booktitle={International Conference on Cyber Warfare and Security},
+  volume={17},
+  number={1},
+  pages={288--297},
+  year={2022}
 }
 

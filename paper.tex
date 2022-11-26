@@ -16,15 +16,31 @@ Lalalal...
 \end{abstract}
 
 \section{Introduction}
-Write a fancy paper here\cite{Kocher2018spectre}.
+Write a fancy paper here\cite{mosier2022}.
 \section{Background}
 Talk about how awesome the topic is.
 \section{Related Work}
-Explain the three papers.
+Explain the three papers.\cite{canella2019} \cite{cats2022}
 \section{Future Work}
 Say what could we build from here.
 \section{Conclusion}
 Summarize and incite.
+
+Shepard, Brookes, and Denz \cite{shepherd2022transient} mention power consumption and EM radiation as potential side channels.
+Could be sad sad how to axiomatic model \emph{all} side effects.
+They also brought my attention to the fact that cache by itself presents a side channel with or without speculative execution.
+Since caching can affect access speed in either case, a sufficiently precise timer can detect which cache lines have been recently touched and from there make inferences about values.
+This is possible because addresses are the same thing as data - one can use data as an address and thereby affect cache state in a manner directly correlated to the data value.
+
+Something about optimize for the common case.
+Transient execution exploits the edges.
+Can coin flips provide security and an acceptable performance?
+Complicated machinery in processors to make predictions, throw predictions out and take an 80\% hit to performance.
+But, replace them with highly/suffficiently rng, and make coin-flip predictions - 50\% of the time they're right every time?
+Adds a ton of noise to the side channels, how much does it really affect performance from a non-speculative baseline or from the super advanced but exploitable current gen?
+
+Lawl, I don't really want to pursue that, do I?
+Would be hilarious, I think.
 
 \bibliographystyle{ieeetr}
 \bibliography{paper}
