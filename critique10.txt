@@ -1,0 +1,24 @@
+
+Critique of "A systematic evaluation of transient execution attacks and defenses" Canella, et al (2019) [1] by Will Wesley
+
+The authors of this paper survey the existing literature of Transient Execution Attacks and defenses for those attacks, specifically Spectre and Meltdown.
+They went on to devise a system to classify these attacks based on which parts of the microarchitecture are being exploited to a) transiently execute and b) transmit sensitive data.
+From this system of classification they identified several new variations on the transient execution theme that had not been reported before, although a few of those were not found to be exploitable for various reasons.
+The classification of defenses was much more simple, binning the known defenses into three categories for Spectre and two for Meltdown.
+They also talked briefly about ``gadgets'' from the perspective of which phase of the attack they are employed and the difficulty of identifying them in real world code.
+
+This paper helped us better understand the landscape of Spectre and Meltdown although, since it is a few years old now, we suspect their claim of there being ``No solution to find spectre gadgets''[2] to be less correct now, especially in light of the previous critique we turned in.
+This paper provides a much better foundation to talk about these kinds of attacks than existed before (Spectre Variant IV, for example), once you understand that the letters refer to _what_ is being exploited in the variant - something that was not completely clear to us the first few times we read the paper and which we consider a weakness of the paper.
+
+In classifying the defenses, the authors point out a previous work in the same area and say that the differences between their work and the predecessor helped uncover problems with the predecessor, but then never elaborate on what those problems may have been.
+We consider this a weakness, because it is of interest to us in our research what those problems might have been.
+The other advantages they call out in their method of the predecessor are that their categorization covers future defenses based on their classification of the attacks and that the recognize the root causes of Spectre and Meltdown as distinct.
+We grant that their system is more likely to cover future work, since it is based on a structured analysis of what could possibly be used as an attack vector in this area, but do not agree that the distinction between Spectre and Meltdown that they make provides as much value to categorizing the defense as they believe.
+In their classification of the attacks, they were keen to decouple transient execution from transmission of speculative state, but then found it necessary to recouple them when it came to discussing the defenses.
+
+We believe there is opportunity to extend the systematic analysis to the defenses for these kinds of attacks in order to identify new mitigations and new combinations of defenses to better cover the attack surface modern processors expose to balance risk with performance requirements.
+
+[1] C. Canella, J. V. Bulck, M. Schwarz, M. Lipp, B. von Berg, P. Ortner, F. Piessens, D. Evtyushkin, and D. Gruss, ``A systematic evaluation of transient execution attacks and defenses,'' in 28th USENIX Security Symposium (USENIX Security 19), (Santa Clara, CA), pp. 249–266, USENIX Association, Aug. 2019.
+[2] C. Canella (August 14, 2019) ``A systematic evaluation of transient execution attacks and defenses,'' [Conference Presentation] 28th USENIX Security Symposium. Santa Clara, CA, USA https://www.youtube.com/watch?v=ibqC4nbs23Y
+
+
