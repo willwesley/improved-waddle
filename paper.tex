@@ -1,5 +1,5 @@
 \documentclass[11pt,conference]{IEEEtran}
-\title{Promiscuous Speculation: Identifying when it is inappropriate to flaunt your guesses}
+\title{Promiscuous Speculation: When is it inappropriate to flaunt your guesses?}
 \author{William Wesley \\
 \texttt{wwesley@uccs.edu} \\
 University of Colorado \\
@@ -62,15 +62,42 @@ Speculative execution may also leak information in terms of varying power consum
 Exact details vary from variant to variant of speculation attack, so for this paper we will summarize the vulnerability as situations in which speculative execution causes changes in state that is not rolled back.
 Although this vulnerability is ostensibly a hardware problem since it is the processor making the decision to violate program order and execute software instructions ``on a guess,'' there are software structures that are more susceptible to falling victim to these kinds of attacks and we can mitigate the risk by modifying our code, masking our data, or explicitly instructing the processor to forego speculation.
 These code structures are called \emph{gadgets} in the literature.
-In the next section we will explore a few approaches to identifying gadgets.
+
+{\Large stick example gadget from original spectre paper here}
 
 \section{Related Work}\label{sec:related}
-Explain the three papers.
+In \textit{A Systematic Evaluation of Transient Execution Attacks and Defenses}, Canella et al\cite{canella2019} describe Spectre and Meltdown as \emph{transient} execution attacks, that is they characterized the vulnerabilities as being the result of instructions being executed and then rolled back.
+This is slightly broader than our definition in that we've focused specifically on speculative execution, whereas the transient definition would allow for instructions rolled back for some other reason than an incorrect prediction.
+For example, instructions following one that creates a fault late in a pipeline may affect system state and not be the fault of a misprediction but just the normal flow of the program.
+However, in a sense this is still a form of misprediction on the part of the compiler or software developer, so we chose to use the traditional nomenclature for our paper.
+Their systematic evaluation of Spectre and Meltdown style attacks allowed them to formulate a classification system.
+They were able to use this system to give more descriptive names to attacks that were currently known and also to identify several new attack variations.
+
+Since Canella et al distinguish between Spectre type and Meltdown type vulnerabilities as being caused by speculation or fault, respectively, it is natural for them to classify the defenses along the same lines.
+For Spectre, they give three categories of defense, paraphrased here:
+\begin{enumerate}
+	\item[\textbf{C1:}] Reducing the fidelity of covert channels, for example by adding jitter to or reducing the precision of timer related functions,
+	\item[\textbf{C2:}] Inhibiting speculation when sensitive data might be accessed, for example placing \texttt{fence} instructions around potential gadgets, or
+	\item[\textbf{C3:}] Ensuring sensitive data cannot be reached, for example masking values used in offsets can affect limits on the range available to out-of-bounds accesses in a gadget.
+\end{enumerate}
+
+For Meltdown, they divide the defenses into the following two categories:
+\begin{enumerate}
+	\item[\textbf{D1:}] Ensuring sensitive data cannot be reached, for example by storing such data in uncacheable memory or structures that are always sanitised on context switches, or
+	\item[\textbf{D2:}] Preventing faults from occurring, for example an access to a protected page from an unprivileged mode might return invalid values instead of triggering a fault.
+\end{enumerate}
+
+
 \cite{mosier2022}.
-\cite{canella2019}
 \cite{cats2022}
 \section{Future Work}\label{sec:future}
-Say what could we build from here.
+
+Canella et al's success in classifying attacks which led to identifying additional variants gives us hope that a similar effort with respect to the defenses might yield additional defenses that might prove useful against future variants.
+We believe there is opportunity both in expanding their classification system in the details and consolidating common features across attack variants.
+There is significant overlap in their categories C2 and D2 and there are overlaps in C3 and D1.
+An overarching trifurcation of approaches, subdivided on perhaps hardware vs software solution, might prove useful in identifying gaps in defense research.
+For example, is there value in identifying ways to reduce the accuracy of data leaked to a Meltdown attack?
+
 \section{Conclusion}
 Summarize and incite.
 
