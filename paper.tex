@@ -1,5 +1,5 @@
 \documentclass[11pt,conference]{IEEEtran}
-\title{A Heuristic Coconut-based Algorithm}
+\title{Promiscuous Speculation: Identifying when it is inappropriate to flaunt your guesses}
 \author{William Wesley \\
 \texttt{wwesley@uccs.edu} \\
 University of Colorado \\
@@ -16,12 +16,60 @@ Lalalal...
 \end{abstract}
 
 \section{Introduction}
-Write a fancy paper here\cite{mosier2022}.
-\section{Background}
-Talk about how awesome the topic is.
-\section{Related Work}
-Explain the three papers.\cite{canella2019} \cite{cats2022}
-\section{Future Work}
+
+Speculative execution attacks have rightfully garnered much attention in the past few years.
+With the publication of the Meltdown\cite{meltdown} and Spectre\cite{spectre} vulnerabilities in 2018 and 2019, respectively, the public became acutely aware of some promiscuous behaviors undertaken by modern processors in the name of performance.
+These behaviors lead directly to compromises in system security by violating the abstraction between hardware and software.
+
+However, the performance gains obtained by speculative execution are so great that we refuse to abandon it and instead seek to mitigate the vulnerabilities in a combination of hardware and software patches.
+We reduce the fidelity of side-channels to deteriorate the performance of attacks to the point that there is more likely an easier way to compromise the system elsewhere.
+We prevent access to sensitive areas of memory by obscuring their location or confining speculative accesses.
+We disable speculative execution with ``fences'' that are software instructions that force the processor into taking more care in particularly risky code structures.
+
+In \S\ref{sec:background} we discuss what speculative execution attacks are and what enables them.
+In \S\ref{sec:related} we talk specifically about work modelling software to identify ``gadgets,'' which can be used to identify places in software where fences or access confinement are necessary to ensure system security.
+Then in \S\ref{sec:future} we identify potential avenues for future research in this area.
+
+\section{Background}\label{sec:background}
+
+Modern general purpose processors derive a large part of their performance from ``speculative execution.''
+Control-flow-affecting instructions present a problem to performance in that the information required to make a control flow decision may not be available before the decision must be made.
+Waiting for that information will result in delays and degradation of system performance.
+However, if the system can accurately predict\footnote{That is, guess better than a coin flip.} the decision, then it can begin execution of the instructions in the correct flow of control before that decision can be made.
+Any uneasiness with this proposal is calmed with the promise that if the prediction is incorrect, the system can simply ``roll-back'' the effects of the incorrect control flow and the penalty for doing so will not be much more than if the system waited for all the information.
+In this way, we optimize for the common case where our predictions are correct and accept some penalty in the rare case that our predictor fails us.
+
+Another tool employed, in many variations, to increase system performance is \emph{caching}.
+We will define caching in this paper as any memory structure that is used to avoid repeating previous work.
+For example, a request to main memory can be cached so that if the same request is repeated, it can be satisfied from the cache rather than a whole new request to main memory.
+Similarly, a translation from virtual memory to physical memory can be saved in a cache so that next time the operating system need not be invoked to perform the translation.
+Yet another example is fast memory locations built into larger memory components that store the results of recent requests to the component, such as row buffers in main memory or cache memory on a disk drive.
+In all of these cases, temporal and physical locality is exploited to reduce the time required to complete execution of a program by avoiding the performance on all of the ``movements'' that would be strictly required.
+
+But, variations in performance are exactly the kind of behavior that lead to Timing Attacks as described by Kocher over twenty-five years ago\cite{kocher96}.
+If the system performance varies with the input of some secret value, that value can potentially be inferred from that variation - that is the variation in time is a ``side-channel'' to obtaining the secret that the software developer may or may not have accounted for in constructing the system.
+Caching alone provides this potential side-channel\cite{shepherd2022transient}, but when combined with speculative execution, the risk is amplified.
+
+In a system with cache in place, the results of a computation or other activity are available quicker if those results were recently obtained.
+In one approach, an attacker might cause a series of computations to be performed and compare the relative times to identify which computation was recently performed, thus identifying which one was executed by the victim and uncovering potential secrets.
+Such an attack would be expensive, but still possible.
+With speculative execution, if an attacker can cause the predictor to make an incorrect prediction while influencing what the incorrect control flow instructions do, the attacker can side step controls such as bounds checking or privilege levels in a brief window within which cache states can be affected in a relatively precise manner.
+
+Furthermore, as Shepard, Brookes, and Denz\cite{shepherd2022transient} remind us, memory access timing is not the only side channel that might be present.
+Speculative execution may also leak information in terms of varying power consumption or EM radiation.
+\emph{Any} side effect changes the state of the system and potentially can be used to exfiltrate sensitive data.
+
+Exact details vary from variant to variant of speculation attack, so for this paper we will summarize the vulnerability as situations in which speculative execution causes changes in state that is not rolled back.
+Although this vulnerability is ostensibly a hardware problem since it is the processor making the decision to violate program order and execute software instructions ``on a guess,'' there are software structures that are more susceptible to falling victim to these kinds of attacks and we can mitigate the risk by modifying our code, masking our data, or explicitly instructing the processor to forego speculation.
+These code structures are called \emph{gadgets} in the literature.
+In the next section we will explore a few approaches to identifying gadgets.
+
+\section{Related Work}\label{sec:related}
+Explain the three papers.
+\cite{mosier2022}.
+\cite{canella2019}
+\cite{cats2022}
+\section{Future Work}\label{sec:future}
 Say what could we build from here.
 \section{Conclusion}
 Summarize and incite.
@@ -41,6 +89,13 @@ Adds a ton of noise to the side channels, how much does it really affect perform
 
 Lawl, I don't really want to pursue that, do I?
 Would be hilarious, I think.
+
+In Ponce-de-León and Kinder\cite{cats2022}, the reference another work about assume always mispredict and you can render security guarantees.
+Could we show a tighter bound by means of coin flips?
+
+
+Despite being discovered twenty-five years ago\cite{kocher96}, even software developers of secure libraries fail to employ tools to defend against timing attacks\cite{9833713}.
+
 
 \bibliographystyle{ieeetr}
 \bibliography{paper}
