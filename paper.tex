@@ -100,10 +100,37 @@ For Meltdown, they divide the defenses into the following two categories:
 	\item[\textbf{D2:}] Preventing faults from occurring, for example an access to a protected page from an unprivileged mode might return invalid values instead of triggering a fault.
 \end{enumerate}
 
-\textit{Axiomatic Hardware-Software Contracts for Security} presents 
-\cite{mosier2022}
+\textit{Axiomatic Hardware-Software Contracts for Security}\cite{mosier2022} presents a model for analysis of software to detect "microarchitectural leakage" automatically.
+Building on Memory Consistency Models (MCMs), Mosier et al create Leakage Containment Models (LCMs) which are used to detect gadgets and other forms of data leakage in examples from other papers.
+The paper concludes with a discussion of CLOU, a static analysis tool that uses LCMs to detect leakage automatically and can automatically insert fences for problem areas, and results of applying the tool to libsodium and OpenSSL.
+
+{\Large TODO}
+Explain briefly MCM.
+Describe LCM.
+Point out weakness.
+
 
 \cite{cats2022}
+
+This paper presents the use of a modeling language (CAT) that is used to describe memory consistency to model speculative execution in a bounded model checking (BMC) framework to identify unsafe behavior in benchmark examples for Spectre vulnerable code and then to prove that an application of fences make the code safe in most instances.
+The first half of the paper illustrates modelling control flow and memory access in traditional in-order execution progressing through speculative and out-of-order execution.
+From constraints on control flow, they constructed CAT models with which to programmatically solve for program execution control flows.
+To validate their models, they created a tool, Kaibyo, that accepts an x86 program, a CAT model, an unrolling bound, and the address of a location in memory that should not be accessible.
+They then ran several benchmark programs through the tool and compared the accuracy and performance against Spectector and Binsec. 
+
+The major weakness with the approach is a weakness of BMC approaches in general.
+The two instances where applying fences could not be proved by Kaibyo involved loops for which unrolling exceeded the bounds imposed on the checker and for which necessary bounds may not be finite.
+
+We would have liked the paper to make some comment with respect to how this approach could be extended to other speculative execution threats such as Meltdown and Foreshadow, or if the authors thought such an application was possible at all.
+They also only evaluated their approach against attacks via pattern history table, store-to-load forwarding, predictive store forwarding, and the aforementioned machine clears variants.
+However, this weakness gave them room to go into depth on the machinery of their approach and it appears that they were already exploring more than what the state of the art approaches had.
+
+Future work based on this research could be to investigate application of CAT and Kaibyo to other speculative execution vulnerabilities.
+The paper assumes a predictor that is incorrect every time, which would be the worse case scenario for speculative attacks.
+There may be a way to show that predictor accuracy will affect the degree to which code is vulnerable to these kinds of attacks.
+
+
+
 \section{Future Work}\label{sec:future}
 
 Canella et al's success in classifying attacks which led to identifying additional variants gives us hope that a similar effort with respect to the defenses might yield additional defenses that might prove useful against future variants.
