@@ -63,7 +63,20 @@ Exact details vary from variant to variant of speculation attack, so for this pa
 Although this vulnerability is ostensibly a hardware problem since it is the processor making the decision to violate program order and execute software instructions ``on a guess,'' there are software structures that are more susceptible to falling victim to these kinds of attacks and we can mitigate the risk by modifying our code, masking our data, or explicitly instructing the processor to forego speculation.
 These code structures are called \emph{gadgets} in the literature.
 
-{\Large stick example gadget from original spectre paper here}
+Consider the code snippet in figure \ref{fig:gadget}.
+Assuming an attacker can control the value of the variable \texttt{x}, then the attacker can train the branch predictor to execute the access relative to \texttt{array1} which will allow an out-of-bounds access to speculatively execute.
+The value so accessed will then be used to access data relative to \texttt{array2}, but scaled so that values map to separate cache lines.
+Then the attacker can scan \texttt{array2}, timing the accesses, and by identifying which cache line returned fastest infer what the value was at the original out-of-bounds access.
+This is the original gadget example from the Spectre paper but many more variations are possible as we explore below.
+
+\begin{figure}[t]
+  \begin{verbatim}
+  if (x < array1_size)
+    y = array2[array1[x] * 4096];\end{verbatim}
+	\caption{Example of a Spectre \emph{gadget} reproduced from \cite{spectre}}
+  \label{fig:gadget}
+\end{figure}
+
 
 \section{Related Work}\label{sec:related}
 In \textit{A Systematic Evaluation of Transient Execution Attacks and Defenses}, Canella et al\cite{canella2019} describe Spectre and Meltdown as \emph{transient} execution attacks, that is they characterized the vulnerabilities as being the result of instructions being executed and then rolled back.
@@ -87,8 +100,9 @@ For Meltdown, they divide the defenses into the following two categories:
 	\item[\textbf{D2:}] Preventing faults from occurring, for example an access to a protected page from an unprivileged mode might return invalid values instead of triggering a fault.
 \end{enumerate}
 
+\textit{Axiomatic Hardware-Software Contracts for Security} presents 
+\cite{mosier2022}
 
-\cite{mosier2022}.
 \cite{cats2022}
 \section{Future Work}\label{sec:future}
 
