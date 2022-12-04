@@ -53,6 +53,10 @@ We reduce the fidelity of side-channels to deteriorate the performance of attack
 We prevent access to sensitive areas of memory by obscuring their location or confining speculative accesses.
 We disable speculative execution with ``fences'' that are software instructions that force the processor into taking more care in particularly risky code structures.
 
+However, reducing precision for legitimate computations limits the usefulness of timers, strategies to confine or obscure memory access can make code more difficult to understand and therefore more prone to containing bugs, and littering code with fences to prevent speculation will limit the performance benefits of doing speculation in the first place.
+So, how can we defend against speculative attacks without unnecessarily sacrificing precision, performance, and readability?
+How can we identify where the risks are so we can balance these conflicting needs?
+
 In \S\ref{sec:background} we discuss what speculative execution attacks are and what enables them.
 In \S\ref{sec:related} we talk specifically about work modelling software to identify ``gadgets,'' which can be used to identify places in software where fences or access confinement are necessary to ensure system security.
 Then in \S\ref{sec:future} we identify potential avenues for future research in this area.
