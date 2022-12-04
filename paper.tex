@@ -6,6 +6,33 @@ University of Colorado \\
 Colorado Springs, Colorado}
 
 \usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+
+\lstdefinestyle{mystyle}{
+    numberstyle=\tiny\color{codegray},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=lines,
+    xleftmargin=10pt,
+    xrightmargin=10pt,
+    literate=
+       {->}{$\rightarrow{}$}{1}
+       {<-}{$\leftarrow{}$}{1}
+}
+
+\lstset{style=mystyle}
 
 \begin{document}
 
@@ -63,22 +90,25 @@ Exact details vary from variant to variant of speculation attack, so for this pa
 Although this vulnerability is ostensibly a hardware problem since it is the processor making the decision to violate program order and execute software instructions ``on a guess,'' there are software structures that are more susceptible to falling victim to these kinds of attacks and we can mitigate the risk by modifying our code, masking our data, or explicitly instructing the processor to forego speculation.
 These code structures are called \emph{gadgets} in the literature.
 
-Consider the code snippet in figure \ref{fig:gadget}.
+Consider the code snippet below, reproduced from \cite{spectre}.
+\begin{lstlisting}
+  if (x < array1_size)
+    y = array2[array1[x] * 4096];
+\end{lstlisting}
 Assuming an attacker can control the value of the variable \texttt{x}, then the attacker can train the branch predictor to execute the access relative to \texttt{array1} which will allow an out-of-bounds access to speculatively execute.
 The value so accessed will then be used to access data relative to \texttt{array2}, but scaled so that values map to separate cache lines.
 Then the attacker can scan \texttt{array2}, timing the accesses, and by identifying which cache line returned fastest infer what the value was at the original out-of-bounds access.
-This is the original gadget example from the Spectre paper but many more variations are possible as we explore below.
+This is the original gadget example from the Spectre paper but many more variations are possible.
 
-\begin{figure}[t]
-  \begin{verbatim}
-  if (x < array1_size)
-    y = array2[array1[x] * 4096];\end{verbatim}
-	\caption{Example of a Spectre \emph{gadget} reproduced from \cite{spectre}}
-  \label{fig:gadget}
-\end{figure}
+Our main interest in this paper is how to identify these gadgets programmatically so that we can defend against attack in software.
+
 
 
 \section{Related Work}\label{sec:related}
+For this paper, we considered primarily three works which we discuss below.
+We sought to understand the state of the art in defenses against speculative execution attacks and narrowed our focus on techniques to systematically identify vulnerable code.
+
+\subsection{Defense Classification}
 In \textit{A Systematic Evaluation of Transient Execution Attacks and Defenses}, Canella et al\cite{canella2019} describe Spectre and Meltdown as \emph{transient} execution attacks, that is they characterized the vulnerabilities as being the result of instructions being executed and then rolled back.
 This is slightly broader than our definition in that we've focused specifically on speculative execution, whereas the transient definition would allow for instructions rolled back for some other reason than an incorrect prediction.
 For example, instructions following one that creates a fault late in a pipeline may affect system state and not be the fault of a misprediction but just the normal flow of the program.
@@ -100,16 +130,71 @@ For Meltdown, they divide the defenses into the following two categories:
 	\item[\textbf{D2:}] Preventing faults from occurring, for example an access to a protected page from an unprivileged mode might return invalid values instead of triggering a fault.
 \end{enumerate}
 
+For categories C2, C3, and D1, the mitigation relies heavily on the software author to balance the security concern with the performance penalty.
+Simply sprinkling code with fences anywhere speculative execution may occur reduces program performance.
+Failing to protect a single instance where speculation leads to exfiltration leaves the entire application insecure.
+But, if we can identify gadgets programmatically, we will be better equipped to write secure and performant code.
+
+\subsection{Leakage Containment Models}
+
 \textit{Axiomatic Hardware-Software Contracts for Security}\cite{mosier2022} presents a model for analysis of software to detect "microarchitectural leakage" automatically.
-Building on Memory Consistency Models (MCMs), Mosier et al create Leakage Containment Models (LCMs) which are used to detect gadgets and other forms of data leakage in examples from other papers.
-The paper concludes with a discussion of CLOU, a static analysis tool that uses LCMs to detect leakage automatically and can automatically insert fences for problem areas, and results of applying the tool to libsodium and OpenSSL.
+Building on Memory Consistency Models (MCMs), Mosier et al define Leakage Containment Models (LCMs) which are used to detect gadgets and other forms of data leakage in examples from other papers.
+They go on with a discussion of CLOU, a static analysis tool that uses LCMs to detect leakage automatically and can automatically insert fences for problem areas, and the results of applying the tool to \texttt{libsodium} and \textit{OpenSSL}.
 
-{\Large TODO}
-Explain briefly MCM.
-Describe LCM.
-Point out weakness.
+Sorin, Hill, and Wood explain that MCMs define the behavior of a shared memory system\cite{mcmprimer}.
+They define the contract between software and hardware about what rules the hardware will abide with respect to reads and writes to memory.
+Intuitively, programmers assume that memory accesses will occur in program order, that is memory will be sequentially consistent.
+However, modern processors will reorder instructions and employ buffers and caches and so offer weaker guarantees with regard to memory consistency.
+A key ingredient Mosier et al draw on is that using MCMs, we can model a programs behavior in both sequentially consistent and according to the guarantees provided by the actual hardware and compare expectation with possible execution and identify areas where care needs to be taken.
 
+By adding microarchitectural and speculative semantics, LCMs allow modelling microarchitectural state, information flow, and leakage.
+We can model the behavior of state with and without speculation.
+In those areas where the two differ we can inspect the flow of information in microarchitectural components and identify where we might find leakage.
 
+To illustrate the salient points from Mosier et al, consider the following code snippet, taken from the paper which is equivalent to the gadget discussed in the previous section:
+\begin{lstlisting}
+if (y < size_A) {
+  x = A[y];
+  tmp &= B[x];
+}
+\end{lstlisting}
+and equivalent assembly pseudo-code:
+\begin{lstlisting}
+R size ->  r1
+R y -> r2
+r3 <- (r2<r1)
+BEQZ r3, 8
+R A+r2 -> r4
+R B+r4 -> r5
+W tmp <- tmp&r5
+skip
+\end{lstlisting}
+
+In Figure \ref{fig:lcm1} the behavior of the program without speculative execution is modelled.
+Note that only memory read instructions are modelled here.
+Black arrows labelled \texttt{po} represent control flow in program order and microarchitectural state changes are captured as (RW $s_0$), (RW $s_1$), and (RW $s_2$).
+This effectively illustrates changes to the cache state when a cache is employed and shows that those changes occur only when they are consistent with expected program behavior.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.6\linewidth]{lcm1}
+	\caption{LCM without speculation, from \cite{mosier2022}}
+  \label{fig:lcm1}
+\end{figure}
+\begin{figure}[t]
+  \includegraphics[width=0.8\linewidth]{lcm2}
+	\caption{LCM with speculation, from \cite{mosier2022}}
+  \label{fig:lcm2}
+\end{figure}
+
+Figure \ref{fig:lcm2} is a model of the same program with speculative execution.
+This model now has edges labelled \texttt{tfo} for \emph{transient flow order} which complement \texttt{po} edges after a branch.
+They represent program flow when a speculation is incorrect.
+On the left side of the graph, there is a \texttt{tfo} edge leading to $\bot$, that is a branch to line 8 of the pseudo code is incorrectly speculated.
+Then another \texttt{tfo} leads back to the line 5 instruction, that is recovering from the mistake and resuming \texttt{po}.
+Now, on the right side of figure \ref{fig:lcm2} we see the microarchitectural state changes occuring along \texttt{tfo} paths and conclude that leakage is possible with this piece of code in a speculative environment.
+
+\subsection{Bounded Model Checking using CAT}
 \cite{cats2022}
 
 This paper presents the use of a modeling language (CAT) that is used to describe memory consistency to model speculative execution in a bounded model checking (BMC) framework to identify unsafe behavior in benchmark examples for Spectre vulnerable code and then to prove that an application of fences make the code safe in most instances.
@@ -160,9 +245,6 @@ Would be hilarious, I think.
 
 In Ponce-de-León and Kinder\cite{cats2022}, the reference another work about assume always mispredict and you can render security guarantees.
 Could we show a tighter bound by means of coin flips?
-
-
-Despite being discovered twenty-five years ago\cite{kocher96}, even software developers of secure libraries fail to employ tools to defend against timing attacks\cite{9833713}.
 
 
 \bibliographystyle{ieeetr}
