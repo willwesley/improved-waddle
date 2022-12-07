@@ -9,6 +9,7 @@ Colorado Springs, Colorado}
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{mathtools}
 
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 
@@ -196,23 +197,67 @@ This model now has edges labelled \texttt{tfo} for \emph{transient flow order} w
 They represent program flow when a speculation is incorrect.
 On the left side of the graph, there is a \texttt{tfo} edge leading to $\bot$, that is a branch to line 8 of the pseudo code is incorrectly speculated.
 Then another \texttt{tfo} leads back to the line 5 instruction, that is recovering from the mistake and resuming \texttt{po}.
-Now, on the right side of figure \ref{fig:lcm2} we see the microarchitectural state changes occuring along \texttt{tfo} paths and conclude that leakage is possible with this piece of code in a speculative environment.
+Now, on the right side of figure \ref{fig:lcm2} we see the microarchitectural state changes occurring along \texttt{tfo} paths and conclude that leakage is possible with this piece of code in a speculative environment.
 
-\subsection{Bounded Model Checking using CAT}
-\cite{cats2022}
+\subsection{Bounded Model Checking}
 
-This paper presents the use of a modeling language (CAT) that is used to describe memory consistency to model speculative execution in a bounded model checking (BMC) framework to identify unsafe behavior in benchmark examples for Spectre vulnerable code and then to prove that an application of fences make the code safe in most instances.
-The first half of the paper illustrates modelling control flow and memory access in traditional in-order execution progressing through speculative and out-of-order execution.
-From constraints on control flow, they constructed CAT models with which to programmatically solve for program execution control flows.
-To validate their models, they created a tool, Kaibyo, that accepts an x86 program, a CAT model, an unrolling bound, and the address of a location in memory that should not be accessible.
-They then ran several benchmark programs through the tool and compared the accuracy and performance against Spectector and Binsec. 
+Another proposal for modelling software to identify vulnerabilities is given in Ponce-de-León and Kinder's \textit{Cats vs. Spectre: An Axiomatic Approach to Modeling Speculative Execution Attacks}\cite{cats2022}.
+The idea is to transform a given program into sets of relations and to specify constraints on program execution, both defined using Algave, Cousot, and Maranget's CAT language\cite{alglave2016syntax} and perform Bounded Model Checking\cite{biere2021BoundedMC} to (hopefully) achieve the desired result.
+Bounded Model Checking is a search for a counterexamples to a model in executions of a program, bounded by some total number of executions.
+Ponce-de-León and Kinder showed how to model execution constraints using CAT to identify a few Spectre variants in example snippets of code and implemented Bounded Model Checkers.
+They then ran several benchmark programs through the resulting tool and compared the accuracy and performance against Spectector and Binsec. 
+In order to achieve guarantees, Ponce-de-León and Kinder follow ``always mispredict semantics'' which forces the model checker to inspect the worse case for any predictor.
 
-The major weakness with the approach is a weakness of BMC approaches in general.
-The two instances where applying fences could not be proved by Kaibyo involved loops for which unrolling exceeded the bounds imposed on the checker and for which necessary bounds may not be finite.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.9\linewidth]{cats1}
+	\caption{Spectre-V1 vs. CATs reproduced from \cite{cats2022}}
+  \label{fig:cats1}
+\end{figure}
 
-We would have liked the paper to make some comment with respect to how this approach could be extended to other speculative execution threats such as Meltdown and Foreshadow, or if the authors thought such an application was possible at all.
-They also only evaluated their approach against attacks via pattern history table, store-to-load forwarding, predictive store forwarding, and the aforementioned machine clears variants.
-However, this weakness gave them room to go into depth on the machinery of their approach and it appears that they were already exploring more than what the state of the art approaches had.
+In Figure \ref{fig:cats1}, directly from \cite{cats2022}, we see the familiar Spectre gadget code snippet in C, translated to an assembly language, and then illustrated in the candidate execution graph where $e_3$ is mispredicted.
+That is, \texttt{idx} is in fact greater than or equal to \texttt{A.size}, but the misprediction leads to executing $e_4$ which reads from \texttt{A} + \texttt{idx} which is out of bounds and can reach some memory location previously written to by $e_s$, where $e_s$ is some instruction handling a sensitive value.
+The intuition here is that if we are predicting that $e_3$ is not going to take the branch, then the order in which $e_3$ and $e_4$ are retired does not matter, and so, in effect, the processor has reordered these instructions to conceal the delay of the read.
+Placing a fence between these instructions prevents reordering and CAT can be used to show that such a revised program would be safe.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.9\linewidth]{cats2}
+	\caption{A safe array access under in-order semantics reproduced from \cite{cats2022}}
+  \label{fig:cats2}
+\end{figure}
+
+In figure \ref{fig:cats2} the program is revised to use \emph{index masking} to avoid the possibility of a branch misprediction instead of a fence.
+The idea is that this would allow the processor to avoid stalling due to a fence.
+The inset is a CAT description of the execution model.
+\texttt{com} is defined as the set of relations of \emph{coherence order} (\texttt{co}) unioned with the set of \emph{reads-from} (\texttt{rf}) relations unioned with the composition of \texttt{rf\textsuperscript{-1}} with \texttt{co}.
+The constraint that the graph formed by \texttt{com} unioned with the set of program order \texttt{po} relations is acyclic describes the execution behavior of an in-order processor with or without branch speculation.
+
+Coherence order relates instructions that write to the same location, in program order.
+Reads-from relates instructions that read from a memory location to the instruction which wrote the value that will be read.
+Note that many of the \texttt{rf} relations are omitted from the diagram for clarity, according to the authors.
+\texttt{rf\textsuperscript{-1}} is the set of inverse relationships of reads-from, that is it relates writes to the reads that access the written value.
+Since there are no branch speculations, this access is safe under these constraints.
+
+However, with the addition of store-to-load forwarding, it is possible to reorder $e_3$ and $e_4$, that is we can begin execution of $e_4$ before $e_3$ is complete.
+That means that \texttt{idx} in both instructions proceed with the initial value -- a sort of misprediction that the store will alias the existing value\footnote{
+	We struggled to understand this.
+	However, it may help to realize that with store-to-load, the processor must guess something.
+	In fact the paper later describes a model where the misprediction was that the value would \emph{not} be aliased and led to another version of the attack.
+	We think.
+}.
+Figure \ref{fig:cats3} illustrates the salient relations now present in the program where store-to-load semantics are allowed.
+Note that this graph would violate the constraint of the previous model of \texttt{com} $\cup$ \texttt{po} being acyclic, as there is a cycle $e_4\xrightarrow{rf^{-1}}e_0\xrightarrow{co}e_3\xrightarrow{po}e_4$.
+Again, adding a fence between $e_3$ and $e_4$ can be shown to be safe with the additional relaxation of constraints need to accommodate store-to-forward.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.6\linewidth]{cats3}
+	\caption{Code snippet from figure \ref{fig:cats2} with store-to-load semantics reproduced from \cite{cats2022}}
+  \label{fig:cats3}
+\end{figure}
+
+
 
 Future work based on this research could be to investigate application of CAT and Kaibyo to other speculative execution vulnerabilities.
 The paper assumes a predictor that is incorrect every time, which would be the worse case scenario for speculative attacks.
