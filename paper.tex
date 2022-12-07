@@ -40,13 +40,22 @@ Colorado Springs, Colorado}
 \maketitle
 
 \begin{abstract}
-Lalalal...
+	% Four sentences [Kent Beck] (=OSCAR)
+	% 1.State the problem
+	% 2.Say why it’s an interesting problem 
+	% 3.Say what your solution achieves 
+	% 4.Say what follows from your solution
+	To go fast, modern computers make guesses that have been shown to put software at risk of exploitation in ways not previously considered.
+	The performance gains achieved by these speculations are so great we cannot afford to simply throw them out entirely.
+	Instead we need to understand the risks and find ways to identify when and where software and hardware mitigations can and need to be placed to ensure security while maintaining performance.
+	This paper reviews recent work on classifying defense strategies and developing axiomatic semantics for program analysis in the context of speculative execution attacks.
+	We then speculate possible next steps in the area of defense and mitigation.
 \end{abstract}
 
 \section{Introduction}
 
 Speculative execution attacks have rightfully garnered much attention in the past few years.
-With the publication of the Meltdown\cite{meltdown} and Spectre\cite{spectre} vulnerabilities in 2018 and 2019, respectively, the public became acutely aware of some promiscuous behaviors undertaken by modern processors in the name of performance.
+With the publication of the Meltdown\cite{meltdown} and Spectre\cite{spectre} vulnerabilities in 2018 and 2019, respectively, industry and academia became acutely aware of some promiscuous behaviors undertaken by modern processors in the name of performance.
 These behaviors lead directly to compromises in system security by violating the abstraction between hardware and software.
 
 However, the performance gains obtained by speculative execution are so great that we refuse to abandon it and instead seek to mitigate the vulnerabilities in a combination of hardware and software patches.
@@ -199,9 +208,12 @@ On the left side of the graph, there is a \texttt{tfo} edge leading to $\bot$, t
 Then another \texttt{tfo} leads back to the line 5 instruction, that is recovering from the mistake and resuming \texttt{po}.
 Now, on the right side of figure \ref{fig:lcm2} we see the microarchitectural state changes occurring along \texttt{tfo} paths and conclude that leakage is possible with this piece of code in a speculative environment.
 
+The major weakness with this approach, in our opinion, is that it only can shed light on areas where there \emph{may} be a speculative exploit gadget.
+We still need to inspect those areas to confirm whether the speculation is possible and then seek to understand the actual risk.
+
 \subsection{Bounded Model Checking}
 
-Another proposal for modelling software to identify vulnerabilities is given in Ponce-de-León and Kinder's \textit{Cats vs. Spectre: An Axiomatic Approach to Modeling Speculative Execution Attacks}\cite{cats2022}.
+Another proposal for modelling software to identify vulnerabilities is given in Ponce-de-León and Kinder's \textit{Cats vs. Spectre: An Axiomatic Approach to Modeling Speculative Execution Attacks}\cite{cats2022} which promises both detection and certification of safety.
 The idea is to transform a given program into sets of relations and to specify constraints on program execution, both defined using Algave, Cousot, and Maranget's CAT language\cite{alglave2016syntax} and perform Bounded Model Checking\cite{biere2021BoundedMC} to (hopefully) achieve the desired result.
 Bounded Model Checking is a search for a counterexamples to a model in executions of a program, bounded by some total number of executions.
 Ponce-de-León and Kinder showed how to model execution constraints using CAT to identify a few Spectre variants in example snippets of code and implemented Bounded Model Checkers.
@@ -257,43 +269,46 @@ Again, adding a fence between $e_3$ and $e_4$ can be shown to be safe with the a
   \label{fig:cats3}
 \end{figure}
 
-
-
-Future work based on this research could be to investigate application of CAT and Kaibyo to other speculative execution vulnerabilities.
-The paper assumes a predictor that is incorrect every time, which would be the worse case scenario for speculative attacks.
-There may be a way to show that predictor accuracy will affect the degree to which code is vulnerable to these kinds of attacks.
-
-
+A weakness with this approach is when we visit the \emph{bounded} part of bounded model checking.
+The examples given here and in the paper illustrate a somewhat simple case of speculative execution occurring in a linear fashion.
+However, speculation can beget speculations and depending on the bound set such a model checker may not be able to provide an answer.
+In fact, in \cite{cats2022}, two of the benchmark speculative programs had that exact problem.
+The benchmark program STL-09 (store-to-load) could not be analyzed by the model checker to confirm the existence of the gadget, nor could it confirm a correct mitigation with the use of a fence.
+The benchmark program PHT-05 (pattern history table) was correctly identified as being vulnerable, but the program could not certify its safety after the application of a fence.
 
 \section{Future Work}\label{sec:future}
 
+- Multiplicity of side channels.
+Shepard, Brookes, and Denz \cite{shepherd2022transient} mention power consumption and EM radiation as potential side channels.
+Could be sad sad how to axiomatic model \emph{all} side effects.
+They also brought my attention to the fact that cache by itself presents a side channel with or without speculative execution.
+Since caching can affect access speed in either case, a sufficiently precise timer can detect which cache lines have been recently touched and from there make inferences about values.
+
+- ok, scale that back a bit, maybe just expand to os level fires like meltdown
 Canella et al's success in classifying attacks which led to identifying additional variants gives us hope that a similar effort with respect to the defenses might yield additional defenses that might prove useful against future variants.
 We believe there is opportunity both in expanding their classification system in the details and consolidating common features across attack variants.
 There is significant overlap in their categories C2 and D2 and there are overlaps in C3 and D1.
 An overarching trifurcation of approaches, subdivided on perhaps hardware vs software solution, might prove useful in identifying gaps in defense research.
 For example, is there value in identifying ways to reduce the accuracy of data leaked to a Meltdown attack?
 
-\section{Conclusion}
-Summarize and incite.
+- more complicated, but maybe we can save some performance
+The paper assumes a predictor that is incorrect every time, which would be the worse case scenario for speculative attacks.
+There may be a way to show that predictor accuracy will affect the degree to which code is vulnerable to these kinds of attacks.
+In Ponce-de-León and Kinder\cite{cats2022}, the reference another work about assume always mispredict and you can render security guarantees.
+Could we show a tighter bound by means of coin flips?
 
-Shepard, Brookes, and Denz \cite{shepherd2022transient} mention power consumption and EM radiation as potential side channels.
-Could be sad sad how to axiomatic model \emph{all} side effects.
-They also brought my attention to the fact that cache by itself presents a side channel with or without speculative execution.
-Since caching can affect access speed in either case, a sufficiently precise timer can detect which cache lines have been recently touched and from there make inferences about values.
-This is possible because addresses are the same thing as data - one can use data as an address and thereby affect cache state in a manner directly correlated to the data value.
-
-Something about optimize for the common case.
-Transient execution exploits the edges.
+- specifically not complicated
 Can coin flips provide security and an acceptable performance?
 Complicated machinery in processors to make predictions, throw predictions out and take an 80\% hit to performance.
 But, replace them with highly/suffficiently rng, and make coin-flip predictions - 50\% of the time they're right every time?
 Adds a ton of noise to the side channels, how much does it really affect performance from a non-speculative baseline or from the super advanced but exploitable current gen?
 
-Lawl, I don't really want to pursue that, do I?
-Would be hilarious, I think.
+- lack of discussion on actual performance impacts of mitigation.
 
-In Ponce-de-León and Kinder\cite{cats2022}, the reference another work about assume always mispredict and you can render security guarantees.
-Could we show a tighter bound by means of coin flips?
+\section{Conclusion}
+
+Something about optimize for the common case.
+Transient execution exploits the edges.
 
 
 \bibliographystyle{ieeetr}
