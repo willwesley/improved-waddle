@@ -261,6 +261,8 @@ That means that \texttt{idx} in both instructions proceed with the initial value
 Figure \ref{fig:cats3} illustrates the salient relations now present in the program where store-to-load semantics are allowed.
 Note that this graph would violate the constraint of the previous model of \texttt{com} $\cup$ \texttt{po} being acyclic, as there is a cycle $e_4\xrightarrow{rf^{-1}}e_0\xrightarrow{co}e_3\xrightarrow{po}e_4$.
 Again, adding a fence between $e_3$ and $e_4$ can be shown to be safe with the additional relaxation of constraints need to accommodate store-to-forward.
+An alternative mitigation, shown in figure \ref{fig:cats4}, is to perform a \emph{register assignment} instead of storing to \texttt{idx} -- the masked value is available without referencing a predictor that speculates what will eventually be in memory.
+Here we avoid predictors and rely strictly on value forwarding within the processor.
 
 \begin{figure}[t]
   \centering
@@ -268,6 +270,14 @@ Again, adding a fence between $e_3$ and $e_4$ can be shown to be safe with the a
 	\caption{Code snippet from figure \ref{fig:cats2} with store-to-load semantics reproduced from \cite{cats2022}}
   \label{fig:cats3}
 \end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.8\linewidth]{cats4}
+	\caption{Store from figure \ref{fig:cats3} replaced with a register assignment becomes safe, reproduced from \cite{cats2022}}
+  \label{fig:cats4}
+\end{figure}
+
 
 A weakness with this approach is when we visit the \emph{bounded} part of bounded model checking.
 The examples given here and in the paper illustrate a somewhat simple case of speculative execution occurring in a linear fashion.
@@ -278,38 +288,50 @@ The benchmark program PHT-05 (pattern history table) was correctly identified as
 
 \section{Future Work}\label{sec:future}
 
-- Multiplicity of side channels.
-Shepard, Brookes, and Denz \cite{shepherd2022transient} mention power consumption and EM radiation as potential side channels.
-Could be sad sad how to axiomatic model \emph{all} side effects.
-They also brought my attention to the fact that cache by itself presents a side channel with or without speculative execution.
-Since caching can affect access speed in either case, a sufficiently precise timer can detect which cache lines have been recently touched and from there make inferences about values.
+In the papers we reviewed, most or all of the attention was given to the Spectre class of vulnerabilities.
+However, there are many similar hardware level features that can leak information and compromise security that deserve the attention of axiomatic modelling and safety checking.
+Shepard, Brookes, and Denz \cite{shepherd2022transient} mention power consumption and EM radiation as potential side channels -- it may be fruitful to devise or investigate extending MCM/LCMs or CAT to include semantics for the effects of computations or transient computations leaking data into such side channels.
+Of course, such effort should also be tempered by understanding the actual difficulty or retrieving information from those channels.
+So, pragmatically, future research should perhaps use the techniques reviewed in this paper to model further systems and exploits, such as Meltdown.
 
-- ok, scale that back a bit, maybe just expand to os level fires like meltdown
-Canella et al's success in classifying attacks which led to identifying additional variants gives us hope that a similar effort with respect to the defenses might yield additional defenses that might prove useful against future variants.
+Canella et al's\cite{canella2019} success in classifying attacks which led to systematically identifying additional variants in attack gives us hope that a similar effort with respect to defenses might yield similar results from the defense perspective.
 We believe there is opportunity both in expanding their classification system in the details and consolidating common features across attack variants.
-There is significant overlap in their categories C2 and D2 and there are overlaps in C3 and D1.
+We believe there is significant overlap in their categories between Meltdown versus Spectre defenses..
 An overarching trifurcation of approaches, subdivided on perhaps hardware vs software solution, might prove useful in identifying gaps in defense research.
-For example, is there value in identifying ways to reduce the accuracy of data leaked to a Meltdown attack?
+For example, is there value in identifying ways to reduce the accuracy of data leaked via a Meltdown attack?
 
-- more complicated, but maybe we can save some performance
-The paper assumes a predictor that is incorrect every time, which would be the worse case scenario for speculative attacks.
+In the CATs paper\cite{cats2022} we assume predictors are incorrect every time, which would be the worse case scenario for speculative attacks.
+This allows the model checker to certify the safety of a program, but may be overly pessimistic about the vulnerability of a program.
 There may be a way to show that predictor accuracy will affect the degree to which code is vulnerable to these kinds of attacks.
-In Ponce-de-León and Kinder\cite{cats2022}, the reference another work about assume always mispredict and you can render security guarantees.
-Could we show a tighter bound by means of coin flips?
+With the models discussed, the result of the analysis is very binary -- either the program is safe or it is vulnerable, but in practice the difficulty of exploiting one gadget compared to another must vary.
+It would be interesting to see some gradient that factored how hard it is to trick the predictor into making a mistake into some measure of the exploitability of analyzed software.
+For example, if a predictor is highly accurate and it takes more time to train it to mispredict, this will slow any attack in comparison to attacking some other prediction mechanism in the processor.
+There may be value in being able to identify if any of your friends are slower than you when running from a bear.
+In order to prioritize and balance trade-offs, of course.
 
-- specifically not complicated
-Can coin flips provide security and an acceptable performance?
-Complicated machinery in processors to make predictions, throw predictions out and take an 80\% hit to performance.
-But, replace them with highly/suffficiently rng, and make coin-flip predictions - 50\% of the time they're right every time?
-Adds a ton of noise to the side channels, how much does it really affect performance from a non-speculative baseline or from the super advanced but exploitable current gen?
+We believe that a reasonable first step in that direction would be to consider the specific case of a predictor that randomly chooses a prediction.
+Can a coin flip predictor provide security and an acceptable performance?
+Suppose disposing current predictors entirely yields an 80\% hit to performance\footnote{We had a note that suggested this number but without a citation. We are ashamed.}.
+Now, suppose we replace them with sufficiently random number generator and use that to make coin-flip predictions -- perhaps 50\% of the time it is right every time.
+We suppose this would add a lot of noise to the side channels, deteriorating their fidelity.
+So, how much does it really affect performance compared to a non-speculative baseline or from a baseline of a predictive out-of-order super-scalar baseline?
 
-- lack of discussion on actual performance impacts of mitigation.
+One final avenue of research we would like to see is addressing the performance implication as part of these models.
+Again, the approaches considered are binary -- either the software is vulnerable to the attack or not.
+Address masking potentially speeds up a program implementation and protects against pattern history attacks.
+With store-to-load forwarding, we are no longer safe -- so what is more expensive, disabling STL by putting a fence between the instructions or doing a register assignment?
 
 \section{Conclusion}
 
-Something about optimize for the common case.
-Transient execution exploits the edges.
+With speculative execution, we have optimized our processors for the common case.
+This is a time tested and true maxim to follow.
+The maximum gain for the minimum effort always yields the greatest profit.
 
+However, speculative execution attacks exploit the edges -- they capitalize on the special cases where the exceptions live -- those places where our predictions are wrong.
+In some programs, being very sure of program safety is of utmost importance and excluding the possibility of being wrong outweighs all other concerns.
+But, in the practical common case, performance still matters and balancing it with risk is important.
+
+We looked at tools that guarantee safety above all else and asked for tools to analyze the trade-off.
 
 \bibliographystyle{ieeetr}
 \bibliography{paper}
